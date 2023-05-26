@@ -3,6 +3,9 @@ from typing import Optional
 from sqlmodel import Field, SQLModel
 from dundie.security import HashedPassword
 
+from pydantic import BaseModel, root_validator
+
+
 
 
 class User(SQLModel, table=True):
@@ -27,3 +30,36 @@ def generate_username(name: str) -> str:
      """Generates a slug username from a name"""
      # TODO: SLUGFY LIBRALY
      return name.lower().replace(" ", "-")
+
+
+class UserResponse(BaseModel):
+    """Serializer for User Response whnen we send info to api (GET)"""
+
+    name: str
+    username: str
+    dept: str
+    avatar: Optional[str] = None
+    bio: Optional[str] = None
+    currency: str
+
+
+class UserRequest(BaseModel):
+    """Serializer for User request payload when we receive a (POST) to api"""
+
+    name: str
+    email: str
+    dept: str
+    password: str
+    currency: str = "USD"
+    username: Optional[str] = None
+    avatar: Optional[str] = None
+    bio: Optional[str] = None
+
+    @root_validator(pre=True) #validat antes da classe ser criada
+    def generate_username_if_not_set(cls, values):
+        """Generates username if not set"""
+        if values.get("username") is None:
+            values["username"] = generate_username(values["name"])
+        return values
+
+
